@@ -1,91 +1,101 @@
 // Define um nome e versão para o cache
-const CACHE_NAME = 'extrator-quadros-cache-v4'; // Versão incrementada para atualizar o cache com os novos ícones
-// Lista de arquivos a serem cacheados na instalação
+const CACHE_NAME = 'extrator-quadros-cache-v1';
+
+// Lista de URLs (recursos) para adicionar ao cache durante a instalação
 const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json', 
-  'https://cdn.tailwindcss.com',
-  // ATUALIZADO: Adiciona os URLs dos ícones placeholder ao cache
-  'https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter',
-  'https://placehold.co/512x512/4f46e5/ffffff?text=Extrator+de+Quadros&font=inter'
+  './', // Cacheia a raiz (geralmente o index.html)
+  './index.html', // Cacheia o arquivo HTML principal
+  'https://cdn.tailwindcss.com' // Cacheia o script do Tailwind
+  // Adicione aqui outros assets, como ícones ou o manifest.json, se necessário
+  // './manifest.json',
+  // './icon-192.png', 
 ];
 
-// Evento de Instalação: Salva os arquivos no cache
-self.addEventListener('install', event => {
-  // Pula a espera para ativar o novo service worker mais rápido
-  self.skipWaiting();
+// Evento 'install': É disparado quando o Service Worker é instalado
+self.addEventListener('install', (event) => {
+  console.log('Service Worker: Instalando...');
+  // Espera a instalação terminar
   event.waitUntil(
+    // Abre o cache com o nome definido
     caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache aberto');
-        // Tenta adicionar todos os URLs, mas não falha se um falhar (ex: placehold.co offline)
-        cache.addAll(urlsToCache).catch(err => {
-            console.warn('Não foi possível cachear todos os recursos iniciais:', err);
-        });
+      .then((cache) => {
+        console.log('Service Worker: Cache aberto. Adicionando URLs...');
+        // Adiciona todos os URLs da lista 'urlsToCache' ao cache
+        return cache.addAll(urlsToCache);
+      })
+      .then(() => {
+        console.log('Service Worker: Todos os recursos foram cacheados com sucesso.');
+        // Força o novo Service Worker a se tornar ativo
+        return self.skipWaiting();
+      })
+      .catch((error) => {
+        console.error('Service Worker: Falha ao cachear arquivos durante a instalação.', error);
       })
   );
 });
 
-// Evento de Fetch: Responde com o cache ou busca na rede
-self.addEventListener('fetch', event => {
-    // Ignora chamadas que não são GET
-    if (event.request.method !== 'GET') {
-        return;
-    }
-
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Se o recurso estiver no cache, retorna ele
-        if (response) {
-          return response;
-        }
-
-        // Se não, busca na rede, salva no cache e retorna
-        return fetch(event.request).then(
-          response => {
-            // Verifica se a resposta é válida
-            if (!response || response.status !== 200) {
-              return response;
-            }
-            
-            // ATUALIZADO: Lógica para cachear recursos externos
-            const url = event.request.url;
-            if (response.type === 'basic' || url.startsWith('https://cdn.tailwindcss.com') || url.startsWith('https://placehold.co')) {
-                const responseToCache = response.clone();
-                caches.open(CACHE_NAME)
-                  .then(cache => {
-                    cache.put(event.request, responseToCache);
-                  });
-            }
-
-            return response;
-          }
-        ).catch(err => {
-            // Em caso de falha na rede (offline), tenta encontrar algo no cache
-            console.warn('Fetch falhou, tentando cache:', err);
-        });
-      })
-  );
-});
-
-// Evento de Ativação: Limpa caches antigos
-self.addEventListener('activate', event => {
-  const cacheWhitelist = [CACHE_NAME];
+// Evento 'activate': É disparado quando o Service Worker é ativado
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker: Ativando...');
   event.waitUntil(
-    caches.keys().then(cacheNames => {
+    // Limpa caches antigos
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheWhitelist.indexOf(cacheName) === -1) {
-            // Deleta caches que não estão na whitelist (caches antigos)
-            console.log('Limpando cache antigo:', cacheName);
+        cacheNames.map((cacheName) => {
+          // Se o nome do cache não for o cache atual, ele é deletado
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: Limpando cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // Torna este Service Worker o controlador da página imediatamente
+      return self.clients.claim();
     })
-    // Força o service worker ativado a tomar controle imediato da página
-    .then(() => self.clients.claim())
   );
 });
+
+// Evento 'fetch': É disparado sempre que a página faz uma requisição (ex: carregar imagem, script, etc.)
+self.addEventListener('fetch', (event) => {
+  // Responde à requisição
+  event.respondWith(
+    // Tenta encontrar a requisição no cache
+    caches.match(event.request)
+      .then((response) => {
+        // Se a requisição for encontrada no cache...
+        if (response) {
+          // Retorna a resposta do cache
+          // console.log('Service Worker: Respondendo com cache para:', event.request.url);
+          return response;
+        }
+
+        // Se não estiver no cache, faz a requisição à rede
+        // console.log('Service Worker: Buscando da rede:', event.request.url);
+        return fetch(event.request).then(
+          (networkResponse) => {
+            // Se a requisição de rede for bem-sucedida
+            // (Não cacheamos requisições que não sejam 'GET' ou de extensões)
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' || event.request.method !== 'GET') {
+              return networkResponse;
+            }
+
+            // Clona a resposta para que possamos colocá-la no cache e retorná-la
+            const responseToCache = networkResponse.clone();
+
+            // Abre o cache e armazena a nova resposta
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return networkResponse;
+          }
+        ).catch((error) => {
+          console.error('Service Worker: Erro ao buscar da rede.', error);
+          // Em caso de falha de rede (e não estar no cache), pode-se retornar uma página offline, se houver
+        });
+      })
+  );
+});
+
