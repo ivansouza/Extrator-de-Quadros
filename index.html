@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Extrator de Quadros</title>
+    <title>Extrator de Quadros de Vídeo</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -15,109 +15,142 @@
     <!-- Ícone para Apple (iOS) usando placeholder -->
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter">
 
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <style>
         /* Custom styles for aesthetic background and font */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f4f7f9;
+            /* Novo fundo gradiente suave */
+            background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
         }
-        /* Custom styles for range slider */
+        
+        /* Estilos refinados para o Range Slider */
         input[type="range"] {
             -webkit-appearance: none;
             width: 100%;
-            height: 8px;
+            height: 6px; /* Um pouco mais fino */
             background: #dbeafe; /* bg-blue-100 */
-            border-radius: 5px;
+            border-radius: 99px; /* rounded-full */
             outline: none;
-            opacity: 0.7;
-            transition: opacity .2s;
-        }
-        input[type="range"]:hover {
-            opacity: 1;
+            transition: background 0.3s;
         }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #4f46e5; /* bg-indigo-600 */
+            width: 22px; /* Botão maior */
+            height: 22px;
+            /* Botão em gradiente */
+            background: linear-gradient(135deg, #4f46e5, #3b82f6); /* indigo-600 to blue-500 */
             border-radius: 50%;
             cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border: 3px solid white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            transition: transform 0.2s ease-in-out;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
         }
         input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #4f46e5;
+            width: 22px;
+            height: 22px;
+            background: linear-gradient(135deg, #4f46e5, #3b82f6);
             border-radius: 50%;
             cursor: pointer;
-            border: 2px solid white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            border: 3px solid white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         input[type="range"]:disabled::-webkit-slider-thumb {
-            background: #a5a5a5;
+            background: #9ca3af; /* gray-400 */
+            transform: scale(1);
         }
         input[type="range"]:disabled::-moz-range-thumb {
-            background: #a5a5a5;
+            background: #9ca3af;
         }
         
-        /* NOVO: Mostra controles customizados quando pausado */
+        /* Efeito de brilho sutil no card principal */
+        #app {
+            transition: box-shadow 0.3s ease-in-out;
+        }
+        #app:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(79, 70, 229, 0.04);
+        }
+
+        /* Mostra controles customizados quando pausado */
         #custom-controls-bar[data-paused="true"] {
             opacity: 1;
         }
+        
+        /* Estilo para input de tempo */
+        input[type="number"] {
+            -moz-appearance: textfield; /* Remove setas no Firefox */
+        }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none; /* Remove setas no Chrome/Safari/Edge */
+            margin: 0;
+        }
     </style>
 </head>
-<body class="p-2 sm:p-4">
+<body class="p-4 sm:p-8 min-h-screen">
 
-<div id="app" class="w-full max-w-6xl mx-auto bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300">
-    <!-- Header -->
-    <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 mb-2">
-        🎬 Extrator de Quadros de Vídeo
+<div id="app" class="w-full max-w-6xl mx-auto bg-white p-5 sm:p-8 md:p-10 rounded-2xl sm:rounded-3xl shadow-xl transition-all duration-300">
+    <!-- Header com Texto em Gradiente -->
+    <h1 class="text-4xl sm:text-5xl font-black mb-3 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-blue-500">
+        🎬 Extrator de Quadros
     </h1>
-    <p class="text-gray-500 mb-6 text-sm sm:text-base">
-        Carregue um vídeo para capturar os quadros inicial, do meio e final.
-        Este app funciona 100% offline.
+    <p class="text-gray-600 mb-8 text-base sm:text-lg">
+        Carregue um vídeo para capturar quadros instantaneamente.
+        Este app funciona 100% offline no seu navegador.
     </p>
 
-    <!-- File Input and Controls -->
-    <div class="mb-6 p-4 border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50">
-        <label for="videoFile" class="block text-base sm:text-lg font-medium text-indigo-700 mb-3">
-            Selecione o Arquivo de Vídeo
+    <!-- File Input (Dropzone) Melhorado -->
+    <div class="mb-8 p-6 sm:p-8 border-2 border-dashed border-indigo-200 rounded-2xl bg-indigo-50/70 text-center">
+        <!-- Ícone -->
+        <svg class="w-16 h-16 text-indigo-300 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
+        </svg>
+        
+        <label for="videoFile" class="block text-lg sm:text-xl font-semibold text-indigo-800 mb-4">
+            Arraste ou Selecione seu Vídeo
         </label>
         <input 
             type="file" 
             id="videoFile"
             accept="video/*" 
             onchange="handleFileChange(event)"
-            class="block w-full text-sm text-gray-900 
-                   file:mr-4 file:py-2 file:px-4 
+            class="block w-full max-w-md mx-auto text-sm text-gray-900 
+                   file:mr-4 file:py-3 file:px-6 
                    file:rounded-full file:border-0
                    file:text-sm file:font-semibold
-                   file:bg-indigo-500 file:text-white
-                   hover:file:bg-indigo-600 cursor-pointer"
+                   file:bg-gradient-to-r file:from-indigo-600 file:to-blue-500 file:text-white
+                   file:shadow-lg file:transform file:transition-all file:duration-300
+                   hover:file:from-indigo-700 hover:file:to-blue-600
+                   hover:file:shadow-xl file:cursor-pointer"
         >
     </div>
 
     <!-- Message Area -->
-    <div id="message-container" class="mb-6">
-        <p id="message" class="text-sm italic text-gray-500"></p>
+    <div id="message-container" class="mb-6 min-h-[24px]">
+        <p id="message" class="text-base font-medium text-gray-500"></p>
     </div>
 
     <!-- Output Area (Extracted Images) -->
-    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Quadros Automáticos</h2>
-    <div id="output-area" class="min-h-[100px] w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
-        <!-- Os quadros extraídos serão exibidos aqui -->
+    <h2 class="text-3xl font-bold text-gray-800 mb-6">Quadros Automáticos</h2>
+    <div id="output-area" class="min-h-[100px] w-full grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+        <!-- Os quadros extraídos serão renderizados aqui pelo JS -->
     </div>
 
-    <!-- ATUALIZADO: Seção do Player e Captura Manual -->
-    <div id="manual-frame-section" class="hidden mt-10 pt-6 border-t-2 border-indigo-100">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">Player & Captura Manual</h2>
+    <!-- Seção do Player e Captura Manual -->
+    <div id="manual-frame-section" class="hidden mt-12 pt-8 border-t-2 border-gray-100">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Player & Captura Manual</h2>
         
-        <!-- Container do Player: (group) controla o hover -->
-        <div id="player-container" class="relative w-full rounded-lg shadow-md bg-gray-900 overflow-hidden group">
+        <!-- Container do Player -->
+        <div id="player-container" class="relative w-full rounded-xl shadow-lg bg-gray-900 overflow-hidden group">
             
-            <!-- Vídeo agora NÃO TEM 'controls' -->
             <video id="video-processor" 
                    class="w-full h-auto block" 
                    playsinline 
@@ -126,46 +159,89 @@
             
             <!-- Controles Customizados -->
             <div id="custom-controls-bar" 
-                 class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/70 to-transparent p-4 flex items-center gap-3 
+                 class="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-black/80 to-transparent p-4 flex items-center gap-4
                         opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 
-                <!-- Botão Play/Pause -->
-                <button id="play-pause-btn" class="flex-shrink-0 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
-                    <!-- Ícone Play (Bootstrap Icons) -->
-                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+                <button id="play-pause-btn" class="flex-shrink-0 p-3 rounded-full text-white hover:bg-white/20 transition-colors">
+                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
                     </svg>
-                    <!-- Ícone Pause (Bootstrap Icons) - Oculto -->
-                    <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 16 16">
+                    <svg id="pause-icon" xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 hidden" fill="currentColor" viewBox="0 0 16 16">
                         <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
                     </svg>
                 </button>
                 
-                <!-- Slider/Seek bar -->
                 <input type="range" id="frame-slider" value="0" step="0.01" class="w-full mx-2" disabled>
                 
-                <!-- Tempo -->
-                <span id="current-time-display" class="font-mono text-sm text-white bg-black/30 px-3 py-1 rounded-full whitespace-nowrap">
+                <span id="current-time-display" class="font-mono text-base text-white bg-black/40 px-4 py-2 rounded-full whitespace-nowrap">
                     0.00s
                 </span>
             </div>
         </div>
 
-        <!-- Controles de Captura Manual (Botão) -->
-        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 mt-4">
-            <label for="capture-manual-frame-btn" class="block text-sm font-medium text-gray-700 mb-2">
-                Use o player acima para encontrar o quadro desejado:
-            </label>
-            <button id="capture-manual-frame-btn" 
-                    class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-5 rounded-full shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled>
-                Capturar Quadro Atual
-            </button>
+        <!-- NOVO: Controles de Captura Manual Divididos -->
+        <div class="mt-6 p-5 bg-gray-50 rounded-xl border border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Método 1: Captura Visual -->
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Método 1: Captura Visual</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Pause o vídeo no quadro desejado e clique no botão abaixo.
+                        </p>
+                    </div>
+                    <button id="capture-manual-frame-btn" 
+                            class="w-full
+                                   bg-gradient-to-r from-green-500 to-emerald-500
+                                   hover:from-green-600 hover:to-emerald-600
+                                   text-white font-bold py-3 px-8 
+                                   rounded-full shadow-lg
+                                   transform transition-all duration-300
+                                   hover:scale-105 hover:shadow-xl
+                                   focus:outline-none focus:ring-4 focus:ring-green-300
+                                   disabled:opacity-40 disabled:scale-100 disabled:shadow-lg disabled:from-gray-400 disabled:to-gray-500"
+                            disabled>
+                        Capturar Quadro Atual
+                    </button>
+                </div>
+                
+                <!-- Método 2: Capturar por Tempo Exato -->
+                <div class="flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Método 2: Capturar por Tempo</h3>
+                        <p class="text-sm text-gray-600 mb-4">
+                            Digite o tempo exato (em segundos) e clique para capturar.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="exact-time-input"
+                               placeholder="Ex: 15.32"
+                               step="0.01"
+                               class="w-full px-4 py-3 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:bg-gray-200"
+                               disabled>
+                        <button id="capture-exact-time-btn" 
+                                class="flex-shrink-0
+                                       bg-gradient-to-r from-indigo-500 to-blue-500
+                                       hover:from-indigo-600 hover:to-blue-600
+                                       text-white font-bold py-3 px-5 
+                                       rounded-full shadow-lg
+                                       transform transition-all duration-300
+                                       hover:scale-105 hover:shadow-xl
+                                       focus:outline-none focus:ring-4 focus:ring-indigo-300
+                                       disabled:opacity-40 disabled:scale-100 disabled:shadow-lg disabled:from-gray-400 disabled:to-gray-500"
+                                disabled>
+                            Capturar
+                        </button>
+                    </div>
+                </div>
+
+            </div>
         </div>
         
         <!-- Saída da Captura Manual -->
-        <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Quadros Capturados Manualmente:</h3>
-        <div id="manual-output-area" class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <h3 class="text-2xl font-semibold text-gray-700 mt-10 mb-5">Seus Quadros Manuais:</h3>
+        <div id="manual-output-area" class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
             <!-- Quadros manuais aqui -->
         </div>
     </div>
@@ -198,10 +274,14 @@
     const manualFrameSection = document.getElementById('manual-frame-section');
     const frameSlider = document.getElementById('frame-slider');
     const currentTimeDisplay = document.getElementById('current-time-display');
-    const captureManualFrameBtn = document.getElementById('capture-manual-frame-btn');
     const manualOutputArea = document.getElementById('manual-output-area');
+    
+    // Botões de Captura Manual
+    const captureManualFrameBtn = document.getElementById('capture-manual-frame-btn');
+    const captureExactTimeBtn = document.getElementById('capture-exact-time-btn');
+    const exactTimeInput = document.getElementById('exact-time-input');
 
-    // NOVOS Elementos para Controles Customizados
+    // Elementos para Controles Customizados
     const playerContainer = document.getElementById('player-container');
     const customControlsBar = document.getElementById('custom-controls-bar');
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -211,24 +291,27 @@
     // Global variables for state
     let videoObjectUrl = null;
     let currentFrameToCapture = 'none'; // State machine: 'first', 'middle', 'last', 'done'
+    let isSeekingForCapture = false; // Flag para o novo método
 
     // --- Event Listeners ---
     frameSlider.addEventListener('input', seekVideo);
     video.addEventListener('timeupdate', updateSliderAndTime);
-    captureManualFrameBtn.addEventListener('click', captureManualFrame);
+    
+    // Listeners dos Botões de Captura
+    captureManualFrameBtn.addEventListener('click', captureCurrentFrame);
+    captureExactTimeBtn.addEventListener('click', captureAtExactTime);
 
-    // NOVOS Listeners para Controles Customizados
+    // Listeners para Controles Customizados
     playPauseBtn.addEventListener('click', togglePlayPause);
     video.addEventListener('click', togglePlayPause); // Clicar no vídeo
     video.addEventListener('play', updatePlayPauseIcon);
     video.addEventListener('pause', updatePlayPauseIcon);
-    // Impede que cliques na barra de controle disparem o play/pause do vídeo
     customControlsBar.addEventListener('click', (e) => e.stopPropagation());
 
 
     function displayMessage(text, classes = 'text-gray-500') {
         messageElement.textContent = text;
-        messageElement.className = `text-sm italic ${classes}`;
+        messageElement.className = `text-base font-medium ${classes}`;
     }
 
     function handleFileChange(event) {
@@ -242,11 +325,14 @@
         manualFrameSection.classList.add('hidden');
         frameSlider.disabled = true;
         captureManualFrameBtn.disabled = true;
-        updatePlayPauseIcon(); // Garante que o ícone de play seja mostrado
+        captureExactTimeBtn.disabled = true;
+        exactTimeInput.disabled = true;
+        exactTimeInput.value = '';
+        updatePlayPauseIcon();
 
         const file = event.target.files[0];
         if (!file || !file.type.startsWith('video/')) {
-            displayMessage('⚠️ Por favor, selecione um arquivo de vídeo válido.', 'text-red-500 font-semibold');
+            displayMessage('⚠️ Por favor, selecione um arquivo de vídeo válido.', 'text-red-500');
             return;
         }
 
@@ -255,7 +341,7 @@
         videoObjectUrl = URL.createObjectURL(file);
         video.src = videoObjectUrl;
         
-        displayMessage('⏳ Vídeo carregado. Aguardando metadados...', 'text-yellow-600 font-semibold');
+        displayMessage('⏳ Vídeo carregado. Aguardando metadados...', 'text-yellow-600');
 
         // Setup new event listeners
         video.onloadedmetadata = processVideoMetadata;
@@ -265,7 +351,7 @@
 
     function processVideoMetadata() {
         if (!video.duration || video.duration === 0) {
-            displayMessage('⚠️ Não foi possível ler a duração do vídeo. O arquivo pode estar corrompido.', 'text-red-500 font-semibold');
+            displayMessage('⚠️ Não foi possível ler a duração do vídeo. O arquivo pode estar corrompido.', 'text-red-500');
             cleanupListeners();
             return;
         }
@@ -281,11 +367,14 @@
         // Start the sequence: seek to the first frame
         currentFrameToCapture = 'first';
         video.currentTime = 0.01; // Seek to start
-        displayMessage('🔍 Buscando o quadro inicial...', 'text-yellow-600 font-semibold');
+        displayMessage('🔍 Buscando o quadro inicial...', 'text-yellow-600');
     }
 
     // This function acts as a state machine, triggered after each seek
     function processSequencedFrame() {
+        // Se for um seek especial para captura exata, o listener temporário cuidará disso
+        if (isSeekingForCapture) return;
+        
         if (currentFrameToCapture === 'done') return;
 
         const ctx = canvas.getContext('2d');
@@ -298,7 +387,7 @@
             // Next, seek to middle
             currentFrameToCapture = 'middle';
             video.currentTime = video.duration / 2;
-            displayMessage('🔍 Buscando o quadro do meio...', 'text-yellow-600 font-semibold');
+            displayMessage('🔍 Buscando o quadro do meio...', 'text-yellow-600');
 
         } else if (currentFrameToCapture === 'middle') {
             renderFrame(imageUrl, 'Quadro do Meio', `quadro_meio_${Date.now()}.png`, outputArea);
@@ -306,7 +395,7 @@
             // Next, seek to end
             currentFrameToCapture = 'last';
             video.currentTime = video.duration - 0.01; // Seek to end
-            displayMessage('🔍 Buscando o último quadro...', 'text-yellow-600 font-semibold');
+            displayMessage('🔍 Buscando o último quadro...', 'text-yellow-600');
 
         } else if (currentFrameToCapture === 'last') {
             renderFrame(imageUrl, 'Último Quadro', `ultimo_quadro_${Date.now()}.png`, outputArea);
@@ -315,16 +404,20 @@
             currentFrameToCapture = 'done';
             
             // Habilita controles manuais e muda mensagem
-            displayMessage(`✅ Quadros extraídos! Agora você pode usar o player para capturar quadros manualmente.`, 'text-green-600 font-semibold');
+            displayMessage(`✅ Quadros extraídos! Use o player para capturas manuais.`, 'text-green-600');
             frameSlider.disabled = false;
             captureManualFrameBtn.disabled = false;
+            captureExactTimeBtn.disabled = false;
+            exactTimeInput.disabled = false;
 
             cleanupListeners(); // We are done
-            updatePlayPauseIcon(); // Garante que o ícone de play e a barra estejam visíveis
+            updatePlayPauseIcon();
         }
     }
 
-    // Helper function to create and append a frame card
+    /**
+     * NOVO: renderFrame com design de card "matador"
+     */
     function renderFrame(imageUrl, title, downloadFilename, targetContainer) {
         if (!targetContainer) {
             console.error("targetContainer não foi fornecido para renderFrame");
@@ -332,33 +425,49 @@
         }
 
         const frameContainer = document.createElement('div');
-        frameContainer.className = "flex flex-col items-center text-center p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-lg";
+        // Card: Branco, arredondado, sombra limpa, hover sutil
+        frameContainer.className = "flex flex-col bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl";
 
+        // Barra de Título
         const titleEl = document.createElement('h2');
-        titleEl.className = "text-lg font-bold mb-3 text-gray-700";
+        titleEl.className = "text-lg font-semibold text-gray-800 p-4 bg-gray-50 border-b border-gray-200 w-full text-center";
         titleEl.textContent = title;
 
+        // Wrapper da Imagem (com padding e fundo sutil)
+        const imgWrapper = document.createElement('div');
+        imgWrapper.className = "p-4 bg-gray-100/50";
+        
         const imgEl = document.createElement('img');
-imgEl.src = imageUrl;
-        imgEl.className = "w-full h-auto rounded-lg shadow-md border-2 border-indigo-300/50";
+        imgEl.src = imageUrl;
+        imgEl.className = "w-full h-auto rounded-lg shadow-md border border-gray-200";
         imgEl.alt = title;
+        
+        imgWrapper.appendChild(imgEl);
+        
+        // Wrapper do Botão (com padding)
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.className = "p-4 pt-0"; // Sem padding no topo
 
         const downloadLink = document.createElement('a');
         downloadLink.href = imageUrl;
         downloadLink.download = downloadFilename;
         downloadLink.textContent = 'Baixar Imagem';
-        downloadLink.className = 'mt-4 inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 text-sm';
-
-        frameContainer.appendChild(titleEl);
-        frameContainer.appendChild(imgEl);
-        frameContainer.appendChild(downloadLink);
+        // Botão: Gradiente, arredondado, sombra, efeitos de hover
+        downloadLink.className = 'w-full text-center block bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold py-2.5 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-200 text-sm';
         
-        // Adiciona ao container de destino (prepend para o novo aparecer primeiro)
+        buttonWrapper.appendChild(downloadLink);
+        
+        // Monta o card
+        frameContainer.appendChild(titleEl);
+        frameContainer.appendChild(imgWrapper);
+        frameContainer.appendChild(buttonWrapper);
+
+        // Adiciona ao container (novos primeiro)
         targetContainer.prepend(frameContainer);
     }
     
     function handleVideoError() {
-        displayMessage('❌ Ocorreu um erro ao carregar o arquivo de vídeo.', 'text-red-500 font-semibold');
+        displayMessage('❌ Ocorreu um erro ao carregar o arquivo de vídeo.', 'text-red-500');
         cleanupListeners();
     }
 
@@ -371,24 +480,22 @@ imgEl.src = imageUrl;
     
     // --- Funções de Controle do Player ---
 
-    // Atualiza o slider e o texto de tempo
     function updateSliderAndTime() {
-        if (video.duration) {
+        if (video.duration && !isSeekingForCapture) {
             const time = video.currentTime;
             frameSlider.value = time;
             currentTimeDisplay.textContent = `${time.toFixed(2)}s`;
         }
     }
 
-    // Procura no vídeo quando o slider é movido
     function seekVideo() {
-        video.currentTime = frameSlider.value;
+        if (!isSeekingForCapture) {
+            video.currentTime = frameSlider.value;
+        }
     }
 
-    // Captura o quadro atual do player de vídeo
-    function captureManualFrame() {
-        if (!video.duration) return;
-
+    // NOVA FUNÇÃO: Helper para desenhar o quadro
+    function drawAndRenderFrame(time) {
         // Garante que o canvas tem o tamanho certo
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -396,21 +503,82 @@ imgEl.src = imageUrl;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageUrl = canvas.toDataURL('image/png');
-        const time = video.currentTime.toFixed(2);
+        const timeStr = time.toFixed(2);
         
         // Renderiza na área de saída manual
         renderFrame(
             imageUrl, 
-            `Quadro: ${time}s`, 
-            `quadro_em_${time}s.png`,
+            `Quadro: ${timeStr}s`, 
+            `quadro_em_${timeStr}s.png`,
             manualOutputArea
         );
     }
 
-    // NOVAS FUNÇÕES PARA CONTROLES CUSTOMIZADOS
+    // MÉTODO 1: Captura o quadro ATUAL
+    function captureCurrentFrame() {
+        if (!video.duration || isSeekingForCapture) return;
+        
+        // Pausa o vídeo para garantir que o quadro não mude
+        if (!video.paused) video.pause();
+        
+        drawAndRenderFrame(video.currentTime);
+    }
+
+    // MÉTODO 2: Busca e captura um tempo EXATO
+    function captureAtExactTime() {
+        if (!video.duration || isSeekingForCapture) return;
+        
+        const time = parseFloat(exactTimeInput.value);
+        
+        // Validação
+        if (isNaN(time) || time < 0 || time > video.duration) {
+            displayMessage(`⚠️ Por favor, insira um tempo válido entre 0 e ${video.duration.toFixed(2)}s.`, 'text-red-500');
+            return;
+        }
+        
+        isSeekingForCapture = true; // Seta a flag
+        // Desabilita UI
+        captureManualFrameBtn.disabled = true;
+        captureExactTimeBtn.disabled = true;
+        exactTimeInput.disabled = true;
+        frameSlider.disabled = true;
+        
+        displayMessage(`🔍 Buscando ${time.toFixed(2)}s...`, 'text-yellow-600');
+        
+        // Cria um listener temporário para o evento 'seeked'
+        const onSeekedCallback = () => {
+            // Pausa o vídeo no ponto exato
+            if (!video.paused) video.pause();
+            
+            // 2. Desenha o quadro
+            drawAndRenderFrame(time);
+            
+            // 3. Limpa
+            video.removeEventListener('seeked', onSeekedCallback);
+            isSeekingForCapture = false;
+            
+            // 4. Reabilita UI
+            captureManualFrameBtn.disabled = false;
+            captureExactTimeBtn.disabled = false;
+            exactTimeInput.disabled = false;
+            frameSlider.disabled = false;
+            
+            displayMessage(`✅ Quadro capturado em ${time.toFixed(2)}s!`, 'text-green-600');
+            
+            // Atualiza o slider e o tempo no player
+            updateSliderAndTime();
+        };
+        
+        // Adiciona o listener
+        video.addEventListener('seeked', onSeekedCallback);
+        
+        // 1. Inicia o seek
+        video.currentTime = time;
+    }
+
     function togglePlayPause(event) {
-        // Impede que o clique se propague (ex: do botão para o vídeo)
         if (event) event.stopPropagation(); 
+        if (isSeekingForCapture) return; // Não permite play/pause durante o seek exato
         
         if (video.paused) {
             video.play();
@@ -423,12 +591,9 @@ imgEl.src = imageUrl;
         const isPaused = video.paused;
         playIcon.classList.toggle('hidden', !isPaused);
         pauseIcon.classList.toggle('hidden', isPaused);
-        // Usa o atributo data- para que o CSS possa mostrar a barra quando pausado
         customControlsBar.dataset.paused = isPaused; 
     }
 
 </script>
 </body>
 </html>
-
-
