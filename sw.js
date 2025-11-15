@@ -1,101 +1,112 @@
-// Define um nome e versão para o cache
-const CACHE_NAME = 'extrator-quadros-cache-v1';
+/*
+  Service Worker (sw.js)
+  
+  Este arquivo gerencia o cache e o ciclo de vida da atualização.
+  
+  IMPORTANTE: Toda vez que você alterar QUALQUER COISA neste arquivo 
+  (mesmo um comentário ou espaço) e der deploy, o navegador
+  irá considerá-lo uma "nova versão" e iniciar o fluxo de atualização.
+*/
 
-// Lista de URLs (recursos) para adicionar ao cache durante a instalação
-const urlsToCache = [
-  './', // Cacheia a raiz (geralmente o index.html)
-  './index.html', // Cacheia o arquivo HTML principal
-  'https://cdn.tailwindcss.com' // Cacheia o script do Tailwind
-  // Adicione aqui outros assets, como ícones ou o manifest.json, se necessário
-  // './manifest.json',
-  // './icon-192.png', 
+// Mude este nome do cache sempre que quiser invalidar o cache antigo
+// por completo (ex: v1, v2, etc.)
+const CACHE_NAME = 'frame-extractor-cache-v1';
+
+// Lista de arquivos essenciais para o "app shell"
+const FILES_TO_CACHE = [
+  './', // O index.html
+  './index.html',
+  './manifest.json',
+  // Adicione aqui os caminhos para ícones, CSS ou JS se eles existirem
+  'https://cdn.tailwindcss.com',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap'
 ];
 
-// Evento 'install': É disparado quando o Service Worker é instalado
+// 1. Evento 'install'
+// Chamado quando o novo SW é baixado.
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Instalando...');
-  // Espera a instalação terminar
+  console.log('[SW] Evento de Instalação');
+  
+  // Pré-cache dos arquivos essenciais
   event.waitUntil(
-    // Abre o cache com o nome definido
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Service Worker: Cache aberto. Adicionando URLs...');
-        // Adiciona todos os URLs da lista 'urlsToCache' ao cache
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => {
-        console.log('Service Worker: Todos os recursos foram cacheados com sucesso.');
-        // Força o novo Service Worker a se tornar ativo
-        return self.skipWaiting();
-      })
-      .catch((error) => {
-        console.error('Service Worker: Falha ao cachear arquivos durante a instalação.', error);
+        console.log('[SW] Cache aberto, cacheando arquivos principais...');
+        // O `addAll` falha se *um* arquivo falhar.
+        // Usamos `add` individualmente com `catch` para ser mais robusto.
+        const cachePromises = FILES_TO_CACHE.map(url => {
+          return cache.add(url).catch(err => {
+            console.warn(`[SW] Falha ao cachear ${url}:`, err);
+          });
+        });
+        return Promise.all(cachePromises);
       })
   );
+  
+  // NÃO usamos self.skipWaiting() aqui
+  // Queremos que o index.html controle quando o SW deve assumir.
 });
 
-// Evento 'activate': É disparado quando o Service Worker é ativado
+// 2. Evento 'activate'
+// Chamado quando o SW antigo é liberado e o novo assume.
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Ativando...');
+  console.log('[SW] Evento de Ativação');
+  
+  // Limpa caches antigos
   event.waitUntil(
-    // Limpa caches antigos
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Se o nome do cache não for o cache atual, ele é deletado
           if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Limpando cache antigo:', cacheName);
+            console.log('[SW] Limpando cache antigo:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
-    }).then(() => {
-      // Torna este Service Worker o controlador da página imediatamente
-      return self.clients.claim();
     })
+  );
+  
+  // Assume o controle de todas as abas abertas imediatamente
+  return self.clients.claim();
+});
+
+// 3. Evento 'fetch'
+// Intercepta todas as requisições de rede (imagens, CSS, JS, etc.)
+self.addEventListener('fetch', (event) => {
+  // Usamos a estratégia "Cache-First" (Primeiro o Cache)
+  // É rápido e funciona offline.
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Se encontramos no cache, retorna do cache
+        if (response) {
+          // console.log('[SW] Servindo do cache:', event.request.url);
+          return response;
+        }
+        
+        // Se não, vai para a rede
+        // console.log('[SW] Servindo da rede:', event.request.url);
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // (Opcional) Podemos clonar e salvar a resposta da rede no cache 
+            // para a próxima vez, mas isso não é necessário para os arquivos
+            // principais que já estão no 'install'.
+            return networkResponse;
+          })
+          .catch(err => {
+            console.error('[SW] Falha no Fetch:', err);
+            // (Opcional) Poderíamos retornar uma página offline aqui
+          });
+      })
   );
 });
 
-// Evento 'fetch': É disparado sempre que a página faz uma requisição (ex: carregar imagem, script, etc.)
-self.addEventListener('fetch', (event) => {
-  // Responde à requisição
-  event.respondWith(
-    // Tenta encontrar a requisição no cache
-    caches.match(event.request)
-      .then((response) => {
-        // Se a requisição for encontrada no cache...
-        if (response) {
-          // Retorna a resposta do cache
-          // console.log('Service Worker: Respondendo com cache para:', event.request.url);
-          return response;
-        }
-
-        // Se não estiver no cache, faz a requisição à rede
-        // console.log('Service Worker: Buscando da rede:', event.request.url);
-        return fetch(event.request).then(
-          (networkResponse) => {
-            // Se a requisição de rede for bem-sucedida
-            // (Não cacheamos requisições que não sejam 'GET' ou de extensões)
-            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' || event.request.method !== 'GET') {
-              return networkResponse;
-            }
-
-            // Clona a resposta para que possamos colocá-la no cache e retorná-la
-            const responseToCache = networkResponse.clone();
-
-            // Abre o cache e armazena a nova resposta
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return networkResponse;
-          }
-        ).catch((error) => {
-          console.error('Service Worker: Erro ao buscar da rede.', error);
-          // Em caso de falha de rede (e não estar no cache), pode-se retornar uma página offline, se houver
-        });
-      })
-  );
+// 4. Evento 'message'
+// Ouve por mensagens do index.html
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    console.log('[SW] Recebeu 'skipWaiting', ativando agora...');
+    self.skipWaiting();
+  }
 });
 
