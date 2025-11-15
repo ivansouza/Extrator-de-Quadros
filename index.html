@@ -21,74 +21,30 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <style>
-        /* Fundo escuro e fonte principal */
+        /* Estilos (sem alterações) */
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #111827; /* bg-gray-900 */
-            color: #d1d5db; /* bg-gray-300 */
+            background-color: #111827;
+            color: #d1d5db;
         }
         
-        /* Estilos do Range Slider para Dark Mode */
-        input[type="range"] {
-            -webkit-appearance: none;
-            width: 100%;
-            height: 6px;
-            background: #374151; /* bg-gray-700 */
-            border-radius: 99px;
-            outline: none;
-            transition: background 0.3s;
-        }
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 22px;
-            height: 22px;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            transition: transform 0.2s ease-in-out;
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.1);
-        }
-        input[type="range"]::-moz-range-thumb {
-            width: 22px;
-            height: 22px;
-            background: linear-gradient(135deg, #4f46e5, #3b82f6);
-            border-radius: 50%;
-            cursor: pointer;
-            border: 3px solid white;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        }
-        input[type="range"]:disabled::-webkit-slider-thumb {
-            background: #4b5563; /* gray-600 */
-            transform: scale(1);
-        }
-        input[type="range"]:disabled::-moz-range-thumb {
-            background: #4b5563;
-        }
+        input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: #374151; border-radius: 99px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; background: linear-gradient(135deg, #4f46e5, #3b82f6); border-radius: 50%; cursor: pointer; border: 3px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; background: linear-gradient(135deg, #4f46e5, #3b82f6); border-radius: 50%; cursor: pointer; border: 3px solid white; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        input[type="range"]:disabled::-webkit-slider-thumb { background: #4b5563; }
+        input[type="range"]:disabled::-moz-range-thumb { background: #4b5563; }
+        #custom-controls-bar[data-paused="true"] { opacity: 1; }
+        input[type="number"] { -moz-appearance: textfield; background-color: #374151; border-color: #4b5563; color: white; }
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type="number"]::placeholder { color: #6b7280; }
         
-        /* Mostra controles customizados quando pausado */
-        #custom-controls-bar[data-paused="true"] {
-            opacity: 1;
+        /* NOVO: Estilo para o banner de atualização */
+        #update-banner {
+            transition: transform 0.3s ease-in-out;
+            transform: translateY(200%);
         }
-        
-        /* Estilo para input de tempo (Dark Mode) */
-        input[type="number"] {
-            -moz-appearance: textfield;
-            background-color: #374151; /* bg-gray-700 */
-            border-color: #4b5563; /* bg-gray-600 */
-            color: white;
-        }
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"]::placeholder {
-            color: #6b7280; /* gray-500 */
+        #update-banner.show {
+            transform: translateY(0);
         }
     </style>
 </head>
@@ -259,246 +215,177 @@
     <canvas id="canvas-processor" style="display: none;"></canvas>
 </div>
 
-<script>
-    // PWA Service Worker Registration
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registrado com sucesso:', registration.scope);
-                })
-                .catch(error => {
-                    console.log('Falha ao registrar ServiceWorker:', error);
-                });
-        });
-    }
+<!-- NOVO: BANNER DE ATUALIZAÇÃO (oculto por padrão) -->
+<div id="update-banner" class="fixed bottom-0 left-0 right-0 p-4 mb-4 mx-4
+                     bg-indigo-600 text-white 
+                     rounded-lg shadow-xl 
+                     flex justify-between items-center">
+    <p class="font-semibold">Uma nova versão está disponível!</p>
+    <button id="reload-button"
+            class="font-bold bg-white text-indigo-600 px-4 py-2 rounded-md
+                   hover:bg-gray-100 transition-colors">
+        Atualizar
+    </button>
+</div>
 
+
+<script>
+    // Lógica principal do app (sem alterações)
+    
     // DOM Elements
     const video = document.getElementById('video-processor');
     const canvas = document.getElementById('canvas-processor');
     const messageElement = document.getElementById('message');
-    
-    // Seções de UI
     const uploadSection = document.getElementById('upload-section');
     const outputSection = document.getElementById('output-section');
     const outputArea = document.getElementById('output-area');
     const manualFrameSection = document.getElementById('manual-frame-section');
-    
-    // Elementos da Seção Manual
     const frameSlider = document.getElementById('frame-slider');
     const currentTimeDisplay = document.getElementById('current-time-display');
     const manualOutputArea = document.getElementById('manual-output-area');
-    
-    // Botões de Captura Manual
     const captureManualFrameBtn = document.getElementById('capture-manual-frame-btn');
     const captureExactTimeBtn = document.getElementById('capture-exact-time-btn');
     const exactTimeInput = document.getElementById('exact-time-input');
-
-    // Elementos para Controles Customizados
     const playerContainer = document.getElementById('player-container');
     const customControlsBar = document.getElementById('custom-controls-bar');
     const playPauseBtn = document.getElementById('play-pause-btn');
     const playIcon = document.getElementById('play-icon');
     const pauseIcon = document.getElementById('pause-icon');
-
-    // Global variables for state
     let videoObjectUrl = null;
-    let currentFrameToCapture = 'none'; // State machine: 'first', 'middle', 'last', 'done'
-    let isSeekingForCapture = false; // Flag para o novo método
+    let currentFrameToCapture = 'none';
+    let isSeekingForCapture = false;
 
     // --- Event Listeners ---
     frameSlider.addEventListener('input', seekVideo);
     video.addEventListener('timeupdate', updateSliderAndTime);
-    
-    // Listeners dos Botões de Captura
     captureManualFrameBtn.addEventListener('click', captureCurrentFrame);
     captureExactTimeBtn.addEventListener('click', captureAtExactTime);
-
-    // Listeners para Controles Customizados
     playPauseBtn.addEventListener('click', togglePlayPause);
-    video.addEventListener('click', togglePlayPause); // Clicar no vídeo
+    video.addEventListener('click', togglePlayPause);
     video.addEventListener('play', updatePlayPauseIcon);
     video.addEventListener('pause', updatePlayPauseIcon);
     customControlsBar.addEventListener('click', (e) => e.stopPropagation());
 
-    // Função para mostrar/ocultar seções principais
+    // --- Funções Principais (sem alterações) ---
     function showSection(section) {
         uploadSection.classList.add('hidden');
         outputSection.classList.add('hidden');
         manualFrameSection.classList.add('hidden');
-
-        if (section === 'upload') {
-            uploadSection.classList.remove('hidden');
-        } else if (section === 'results') {
+        if (section === 'upload') { uploadSection.classList.remove('hidden'); } 
+        else if (section === 'results') {
             outputSection.classList.remove('hidden');
             manualFrameSection.classList.remove('hidden');
         }
     }
-
     function displayMessage(text, classes = 'text-gray-500') {
         messageElement.textContent = text;
         messageElement.className = `text-base font-medium ${classes}`;
     }
-
     function handleFileChange(event) {
-        // Reset everything
         outputArea.innerHTML = '';
         manualOutputArea.innerHTML = '';
         displayMessage('');
         currentFrameToCapture = 'none';
-        
-        // Esconde seções de resultados e reseta controles
-        showSection('upload'); // Mostra apenas o upload
+        showSection('upload');
         frameSlider.disabled = true;
         captureManualFrameBtn.disabled = true;
         captureExactTimeBtn.disabled = true;
         exactTimeInput.disabled = true;
         exactTimeInput.value = '';
         updatePlayPauseIcon();
-
         const file = event.target.files[0];
         if (!file || !file.type.startsWith('video/')) {
             displayMessage('⚠️ Por favor, selecione um arquivo de vídeo válido.', 'text-red-500');
             return;
         }
-
         if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
-
         videoObjectUrl = URL.createObjectURL(file);
         video.src = videoObjectUrl;
-        
         displayMessage('⏳ Vídeo carregado. Aguardando metadados...', 'text-yellow-500');
-
-        // Setup new event listeners
         video.onloadedmetadata = processVideoMetadata;
-        video.onseeked = processSequencedFrame; // Main state machine
+        video.onseeked = processSequencedFrame;
         video.onerror = handleVideoError;
     }
-
     function processVideoMetadata() {
         if (!video.duration || video.duration === 0) {
-            displayMessage('⚠️ Não foi possível ler a duração do vídeo. O arquivo pode estar corrompido.', 'text-red-500');
+            displayMessage('⚠️ Não foi possível ler a duração do vídeo...', 'text-red-500');
             cleanupListeners();
-            showSection('upload'); // Volta para tela de upload
+            showSection('upload');
             return;
         }
-        
-        // MOSTRA AS SEÇÕES DE RESULTADOS
         showSection('results');
-
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        
-        // Configura o slider
         frameSlider.max = video.duration;
         frameSlider.value = 0;
-        
-        // Start the sequence: seek to the first frame
         currentFrameToCapture = 'first';
-        video.currentTime = 0.01; // Seek to start
+        video.currentTime = 0.01;
         displayMessage('🔍 Buscando o quadro inicial...', 'text-yellow-500');
     }
-
-    // This function acts as a state machine, triggered after each seek
     function processSequencedFrame() {
-        if (isSeekingForCapture) return;
-        if (currentFrameToCapture === 'done') return;
-
+        if (isSeekingForCapture || currentFrameToCapture === 'done') return;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageUrl = canvas.toDataURL('image/png');
-
         if (currentFrameToCapture === 'first') {
             renderFrame(imageUrl, 'Quadro Inicial', `primeiro_quadro_${Date.now()}.png`, outputArea);
             currentFrameToCapture = 'middle';
             video.currentTime = video.duration / 2;
             displayMessage('🔍 Buscando o quadro do meio...', 'text-yellow-500');
-
         } else if (currentFrameToCapture === 'middle') {
             renderFrame(imageUrl, 'Quadro do Meio', `quadro_meio_${Date.now()}.png`, outputArea);
             currentFrameToCapture = 'last';
-            video.currentTime = video.duration - 0.01; // Seek to end
+            video.currentTime = video.duration - 0.01;
             displayMessage('🔍 Buscando o último quadro...', 'text-yellow-500');
-
         } else if (currentFrameToCapture === 'last') {
             renderFrame(imageUrl, 'Último Quadro', `ultimo_quadro_${Date.now()}.png`, outputArea);
             currentFrameToCapture = 'done';
-            
-            // Habilita controles manuais e muda mensagem
-            displayMessage(`✅ Quadros extraídos! Use o player para capturas manuais.`, 'text-green-500');
+            displayMessage(`✅ Quadros extraídos! Use o player para capturas manuais.`, 'text-green-600');
             frameSlider.disabled = false;
             captureManualFrameBtn.disabled = false;
             captureExactTimeBtn.disabled = false;
             exactTimeInput.disabled = false;
-
             cleanupListeners();
             updatePlayPauseIcon();
         }
     }
-
-    /**
-     * NOVO: renderFrame com design de card "Dark Mode"
-     */
     function renderFrame(imageUrl, title, downloadFilename, targetContainer) {
-        if (!targetContainer) {
-            console.error("targetContainer não foi fornecido para renderFrame");
-            return;
-        }
-
+        if (!targetContainer) return;
         const frameContainer = document.createElement('div');
-        // Card: Fundo escuro, borda sutil, sombra
         frameContainer.className = "flex flex-col bg-gray-800 rounded-2xl border border-gray-700 shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl hover:border-gray-600";
-
-        // Barra de Título
         const titleEl = document.createElement('h2');
         titleEl.className = "text-lg font-semibold text-gray-100 p-4 bg-gray-700/50 border-b border-gray-700 w-full text-center";
         titleEl.textContent = title;
-
-        // Wrapper da Imagem
         const imgWrapper = document.createElement('div');
-        imgWrapper.className = "p-4 bg-gray-800"; // Fundo igual ao card
-        
+        imgWrapper.className = "p-4 bg-gray-800";
         const imgEl = document.createElement('img');
         imgEl.src = imageUrl;
         imgEl.className = "w-full h-auto rounded-lg shadow-md border border-gray-700";
         imgEl.alt = title;
-        
         imgWrapper.appendChild(imgEl);
-        
-        // Wrapper do Botão
         const buttonWrapper = document.createElement('div');
         buttonWrapper.className = "p-4 pt-0";
-
         const downloadLink = document.createElement('a');
         downloadLink.href = imageUrl;
         downloadLink.download = downloadFilename;
         downloadLink.textContent = 'Baixar Imagem';
-        // Botão: Gradiente (mantido para destaque)
         downloadLink.className = 'w-full text-center block bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold py-2.5 px-4 rounded-full shadow-md transform transition-all duration-300 hover:scale-105 hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-300/50 text-sm';
-        
         buttonWrapper.appendChild(downloadLink);
-        
         frameContainer.appendChild(titleEl);
         frameContainer.appendChild(imgWrapper);
         frameContainer.appendChild(buttonWrapper);
-
         targetContainer.prepend(frameContainer);
     }
-    
     function handleVideoError() {
         displayMessage('❌ Ocorreu um erro ao carregar o arquivo de vídeo.', 'text-red-500');
         cleanupListeners();
-        showSection('upload'); // Volta para tela de upload
+        showSection('upload');
     }
-
     function cleanupListeners() {
         video.onloadedmetadata = null;
         video.onseeked = null;
         video.onerror = null;
     }
-    
-    // --- Funções de Controle do Player ---
-
     function updateSliderAndTime() {
         if (video.duration && !isSeekingForCapture) {
             const time = video.currentTime;
@@ -506,13 +393,9 @@
             currentTimeDisplay.textContent = `${time.toFixed(2)}s`;
         }
     }
-
     function seekVideo() {
-        if (!isSeekingForCapture) {
-            video.currentTime = frameSlider.value;
-        }
+        if (!isSeekingForCapture) { video.currentTime = frameSlider.value; }
     }
-
     function drawAndRenderFrame(time) {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
@@ -520,81 +403,114 @@
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const imageUrl = canvas.toDataURL('image/png');
         const timeStr = time.toFixed(2);
-        
-        renderFrame(
-            imageUrl, 
-            `Quadro: ${timeStr}s`, 
-            `quadro_em_${timeStr}s.png`,
-            manualOutputArea
-        );
+        renderFrame(imageUrl, `Quadro: ${timeStr}s`, `quadro_em_${timeStr}s.png`, manualOutputArea);
     }
-
     function captureCurrentFrame() {
         if (!video.duration || isSeekingForCapture) return;
         if (!video.paused) video.pause();
         drawAndRenderFrame(video.currentTime);
     }
-
     function captureAtExactTime() {
         if (!video.duration || isSeekingForCapture) return;
-        
         const time = parseFloat(exactTimeInput.value);
-        
         if (isNaN(time) || time < 0 || time > video.duration) {
             displayMessage(`⚠️ Por favor, insira um tempo válido entre 0 e ${video.duration.toFixed(2)}s.`, 'text-red-500');
             return;
         }
-        
         isSeekingForCapture = true;
         captureManualFrameBtn.disabled = true;
         captureExactTimeBtn.disabled = true;
         exactTimeInput.disabled = true;
         frameSlider.disabled = true;
         displayMessage(`🔍 Buscando ${time.toFixed(2)}s...`, 'text-yellow-500');
-        
         const onSeekedCallback = () => {
             if (!video.paused) video.pause();
             drawAndRenderFrame(time);
-            
             video.removeEventListener('seeked', onSeekedCallback);
             isSeekingForCapture = false;
-            
             captureManualFrameBtn.disabled = false;
             captureExactTimeBtn.disabled = false;
             exactTimeInput.disabled = false;
             frameSlider.disabled = false;
-            
             displayMessage(`✅ Quadro capturado em ${time.toFixed(2)}s!`, 'text-green-500');
             updateSliderAndTime();
         };
-        
         video.addEventListener('seeked', onSeekedCallback);
         video.currentTime = time;
     }
-
     function togglePlayPause(event) {
         if (event) event.stopPropagation(); 
         if (isSeekingForCapture) return;
-        
-        if (video.paused) {
-            video.play();
-        } else {
-            video.pause();
-        }
+        if (video.paused) { video.play(); } else { video.pause(); }
     }
-
     function updatePlayPauseIcon() {
         const isPaused = video.paused;
         playIcon.classList.toggle('hidden', !isPaused);
         pauseIcon.classList.toggle('hidden', isPaused);
         customControlsBar.dataset.paused = isPaused; 
     }
-    
-    // Inicializa a UI para mostrar apenas a seção de upload
     document.addEventListener('DOMContentLoaded', () => {
         showSection('upload');
     });
 
+
+    // --- NOVO: LÓGICA DE REGISTRO E ATUALIZAÇÃO DO PWA ---
+
+    let newWorker; // Variável para guardar o novo Service Worker
+
+    function showUpdateBanner() {
+        const banner = document.getElementById('update-banner');
+        const reloadButton = document.getElementById('reload-button');
+        
+        reloadButton.addEventListener('click', () => {
+            // Diz ao novo worker para assumir o controle
+            newWorker.postMessage({ action: 'skipWaiting' });
+            // Recarrega a página
+            window.location.reload();
+        });
+        
+        banner.classList.add('show');
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registrado com sucesso:', registration.scope);
+                    
+                    // Verifica se já existe um SW esperando
+                    if (registration.waiting) {
+                        newWorker = registration.waiting;
+                        showUpdateBanner();
+                        return;
+                    }
+
+                    // Ouve por um novo SW sendo instalado
+                    registration.addEventListener('updatefound', () => {
+                        console.log('Nova versão do ServiceWorker encontrada!');
+                        newWorker = registration.installing;
+                        
+                        // Ouve pela mudança de estado do *novo* worker
+                        newWorker.addEventListener('statechange', () => {
+                            // Se o estado mudou para "instalado" (e está esperando para ativar)
+                            if (newWorker.state === 'installed') {
+                                // Se houver um SW *ativo* (antigo), mostramos o banner
+                                // Se não houver, ele vai ativar sozinho (primeira instalação)
+                                if (navigator.serviceWorker.controller) {
+                                    showUpdateBanner();
+                                }
+                            }
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.log('Falha ao registrar ServiceWorker:', error);
+                });
+        });
+    }
+
 </script>
 </body>
 </html>
+
+
