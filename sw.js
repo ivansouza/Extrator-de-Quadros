@@ -1,27 +1,35 @@
 // Define um nome e versão para o cache
-const CACHE_NAME = 'extrator-quadros-cache-v2'; // Versão incrementada para limpar caches antigos
+const CACHE_NAME = 'extrator-quadros-cache-v4'; // Versão incrementada para atualizar o cache com os novos ícones
 // Lista de arquivos a serem cacheados na instalação
 const urlsToCache = [
   './',
   './index.html',
-  'https://cdn.tailwindcss.com' // Cache do Tailwind
-  // O manifest.json é buscado pelo navegador automaticamente
+  './manifest.json', 
+  'https://cdn.tailwindcss.com',
+  // ATUALIZADO: Adiciona os URLs dos ícones placeholder ao cache
+  'https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter',
+  'https://placehold.co/512x512/4f46e5/ffffff?text=Extrator+de+Quadros&font=inter'
 ];
 
 // Evento de Instalação: Salva os arquivos no cache
 self.addEventListener('install', event => {
+  // Pula a espera para ativar o novo service worker mais rápido
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Cache aberto');
-        return cache.addAll(urlsToCache);
+        // Tenta adicionar todos os URLs, mas não falha se um falhar (ex: placehold.co offline)
+        cache.addAll(urlsToCache).catch(err => {
+            console.warn('Não foi possível cachear todos os recursos iniciais:', err);
+        });
       })
   );
 });
 
 // Evento de Fetch: Responde com o cache ou busca na rede
 self.addEventListener('fetch', event => {
-    // Ignora chamadas que não são GET (ex: POST para APIs externas, o que não temos mais)
+    // Ignora chamadas que não são GET
     if (event.request.method !== 'GET') {
         return;
     }
@@ -41,10 +49,10 @@ self.addEventListener('fetch', event => {
             if (!response || response.status !== 200) {
               return response;
             }
-
-            // Clona a resposta para salvar no cache
-            // Apenas cacheia recursos 'basic' (do mesmo domínio) e o Tailwind
-            if (response.type === 'basic' || event.request.url.startsWith('https://cdn.tailwindcss.com')) {
+            
+            // ATUALIZADO: Lógica para cachear recursos externos
+            const url = event.request.url;
+            if (response.type === 'basic' || url.startsWith('https://cdn.tailwindcss.com') || url.startsWith('https://placehold.co')) {
                 const responseToCache = response.clone();
                 caches.open(CACHE_NAME)
                   .then(cache => {
@@ -54,7 +62,10 @@ self.addEventListener('fetch', event => {
 
             return response;
           }
-        );
+        ).catch(err => {
+            // Em caso de falha na rede (offline), tenta encontrar algo no cache
+            console.warn('Fetch falhou, tentando cache:', err);
+        });
       })
   );
 });
@@ -74,5 +85,7 @@ self.addEventListener('activate', event => {
         })
       );
     })
+    // Força o service worker ativado a tomar controle imediato da página
+    .then(() => self.clients.claim())
   );
 });
