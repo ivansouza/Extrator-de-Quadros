@@ -7,7 +7,7 @@
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- PWA Manifest Link -->
+    <!-- PWA Manifest Link (ESSENCIAL PARA INSTALAÇÃO) -->
     <link rel="manifest" href="manifest.json">
     <!-- Theme Color for PWA -->
     <meta name="theme-color" content="#111827"> <!-- Cor escura (gray-900) -->
@@ -38,7 +38,7 @@
         input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"]::placeholder { color: #6b7280; }
         
-        /* NOVO: Estilo para o banner de atualização */
+        /* Estilo para o banner de atualização */
         #update-banner {
             transition: transform 0.3s ease-in-out;
             transform: translateY(200%);
@@ -55,7 +55,7 @@
 
     <!-- Seção de Upload (Estado Inicial) -->
     <div id="upload-section" class="text-center">
-        <!-- Ícone (como no exemplo) -->
+        <!-- Ícone -->
         <svg class="w-16 h-16 text-gray-600 mx-auto mb-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 0 1-1.125-1.125v-12.75c0-.621.504-1.125 1.125-1.125h17.25c.621 0 1.125.504 1.125 1.125v12.75c0 .621-.504 1.125-1.125 1.125m-17.25 0h.008v.008H3.375v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm16.5 0h.008v.008H19.875v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.75 0h.008v.008H16.5v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.75 0h.008v.008H12.75v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.75 0h.008v.008H9v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm-3.75 0h.008v.008H5.25v-.008Zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
         </svg>
@@ -85,12 +85,26 @@
                    class="hidden">
         </label>
         
-        <!-- Texto de Privacidade (como no exemplo) -->
+        <!-- Texto de Privacidade -->
         <div class="mt-8 space-y-2 text-sm text-gray-500">
             <p>O vídeo nunca sai do seu computador.</p>
             <p>A extração de quadros acontece dentro do seu navegador.</p>
             <p>Os quadros são extraídos na resolução do vídeo.</p>
         </div>
+
+        <!-- NOVO: Botão de Instalação Manual -->
+        <button id="install-button"
+                class="hidden mt-8 w-full max-w-sm mx-auto
+                       bg-gradient-to-r from-indigo-500 to-blue-500
+                       hover:from-indigo-600 hover:to-blue-600
+                       text-white font-bold py-3 px-8 
+                       rounded-full shadow-lg
+                       transform transition-all duration-300
+                       hover:scale-105 hover:shadow-xl
+                       focus:outline-none focus:ring-4 focus:ring-indigo-300">
+            Instalar Aplicativo
+        </button>
+
     </div> <!-- Fim #upload-section -->
 
 
@@ -215,11 +229,11 @@
     <canvas id="canvas-processor" style="display: none;"></canvas>
 </div>
 
-<!-- NOVO: BANNER DE ATUALIZAÇÃO (oculto por padrão) -->
+<!-- BANNER DE ATUALIZAÇÃO (oculto por padrão) -->
 <div id="update-banner" class="fixed bottom-0 left-0 right-0 p-4 mb-4 mx-4
                      bg-indigo-600 text-white 
                      rounded-lg shadow-xl 
-                     flex justify-between items-center">
+                     flex justify-between items-center z-50">
     <p class="font-semibold">Uma nova versão está disponível!</p>
     <button id="reload-button"
             class="font-bold bg-white text-indigo-600 px-4 py-2 rounded-md
@@ -432,7 +446,7 @@
             captureExactTimeBtn.disabled = false;
             exactTimeInput.disabled = false;
             frameSlider.disabled = false;
-            displayMessage(`✅ Quadro capturado em ${time.toFixed(2)}s!`, 'text-green-500');
+            displayMessage(`✅ Quadro capturado em ${time.toFixed(2)}s!`, 'text-green-600');
             updateSliderAndTime();
         };
         video.addEventListener('seeked', onSeekedCallback);
@@ -454,7 +468,7 @@
     });
 
 
-    // --- NOVO: LÓGICA DE REGISTRO E ATUALIZAÇÃO DO PWA ---
+    // --- LÓGICA DE ATUALIZAÇÃO DO PWA ---
 
     let newWorker; // Variável para guardar o novo Service Worker
 
@@ -463,9 +477,7 @@
         const reloadButton = document.getElementById('reload-button');
         
         reloadButton.addEventListener('click', () => {
-            // Diz ao novo worker para assumir o controle
             newWorker.postMessage({ action: 'skipWaiting' });
-            // Recarrega a página
             window.location.reload();
         });
         
@@ -478,24 +490,18 @@
                 .then(registration => {
                     console.log('ServiceWorker registrado com sucesso:', registration.scope);
                     
-                    // Verifica se já existe um SW esperando
                     if (registration.waiting) {
                         newWorker = registration.waiting;
                         showUpdateBanner();
                         return;
                     }
 
-                    // Ouve por um novo SW sendo instalado
                     registration.addEventListener('updatefound', () => {
                         console.log('Nova versão do ServiceWorker encontrada!');
                         newWorker = registration.installing;
                         
-                        // Ouve pela mudança de estado do *novo* worker
                         newWorker.addEventListener('statechange', () => {
-                            // Se o estado mudou para "instalado" (e está esperando para ativar)
                             if (newWorker.state === 'installed') {
-                                // Se houver um SW *ativo* (antigo), mostramos o banner
-                                // Se não houver, ele vai ativar sozinho (primeira instalação)
                                 if (navigator.serviceWorker.controller) {
                                     showUpdateBanner();
                                 }
@@ -508,6 +514,48 @@
                 });
         });
     }
+
+    // --- NOVO: LÓGICA DE INSTALAÇÃO MANUAL (A2HS) ---
+
+    let deferredPrompt; // Armazena o evento 'beforeinstallprompt'
+    const installButton = document.getElementById('install-button');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        // Previne que o mini-infobar do Chrome apareça
+        e.preventDefault();
+        // Guarda o evento para que possa ser disparado mais tarde.
+        deferredPrompt = e;
+        // Mostra o nosso botão customizado
+        console.log('`beforeinstallprompt` disparado. Mostrando botão de instalação.');
+        installButton.classList.remove('hidden');
+    });
+
+    installButton.addEventListener('click', (e) => {
+        // Oculta o nosso botão
+        installButton.classList.add('hidden');
+        // Mostra o prompt de instalação
+        if (!deferredPrompt) {
+            console.log('deferredPrompt não está disponível.');
+            return;
+        }
+        deferredPrompt.prompt();
+        // Espera pela escolha do usuário
+        deferredPrompt.userChoice.then((choiceResult) => {
+            if (choiceResult.outcome === 'accepted') {
+                console.log('Usuário aceitou a instalação');
+            } else {
+                console.log('Usuário recusou a instalação');
+            }
+            deferredPrompt = null;
+        });
+    });
+
+    // Ouve se o app foi instalado com sucesso
+    window.addEventListener('appinstalled', (evt) => {
+        console.log('PWA foi instalado com sucesso.');
+        // Esconde o botão se ainda estiver visível
+        installButton.classList.add('hidden');
+    });
 
 </script>
 </body>
