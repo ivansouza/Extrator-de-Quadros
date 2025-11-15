@@ -5,21 +5,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Extrator de Quadros</title>
     <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
     
     <!-- PWA Manifest Link -->
     <link rel="manifest" href="manifest.json">
     <!-- Theme Color for PWA -->
     <meta name="theme-color" content="#4f46e5">
 
-    <!-- ATUALIZADO: Ícone para Apple (iOS) usando placeholder -->
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter">
+    <!-- Ícone para Apple (iOS) usando placeholder -->
+    <link rel="apple-touch-icon" href="[https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter](https://placehold.co/192x192/4f46e5/ffffff?text=Quadros&font=inter)">
 
     <style>
         /* Custom styles for aesthetic background and font */
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f4f7f9;
+        }
+        /* Custom styles for range slider */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            background: #dbeafe; /* bg-blue-100 */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity .2s;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5; /* bg-indigo-600 */
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input[type="range"]:disabled::-webkit-slider-thumb {
+            background: #a5a5a5;
+        }
+        input[type="range"]:disabled::-moz-range-thumb {
+            background: #a5a5a5;
+        }
+        
+        /* NOVO: Mostra controles customizados quando pausado */
+        #custom-controls-bar[data-paused="true"] {
+            opacity: 1;
         }
     </style>
 </head>
@@ -60,12 +105,72 @@
     </div>
 
     <!-- Output Area (Extracted Images) -->
+    <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Quadros Automáticos</h2>
     <div id="output-area" class="min-h-[100px] w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <!-- Os quadros extraídos serão exibidos aqui -->
     </div>
+
+    <!-- ATUALIZADO: Seção do Player e Captura Manual -->
+    <div id="manual-frame-section" class="hidden mt-10 pt-6 border-t-2 border-indigo-100">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Player & Captura Manual</h2>
+        
+        <!-- Container do Player: (group) controla o hover -->
+        <div id="player-container" class="relative w-full rounded-lg shadow-md bg-gray-900 overflow-hidden group">
+            
+            <!-- Vídeo agora NÃO TEM 'controls' -->
+            <video id="video-processor" 
+                   class="w-full h-auto block" 
+                   playsinline 
+                   preload="auto">
+            </video>
+            
+            <!-- Controles Customizados -->
+            <div id="custom-controls-bar" 
+                 class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/70 to-transparent p-4 flex items-center gap-3 
+                        opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                
+                <!-- Botão Play/Pause -->
+                <button id="play-pause-btn" class="flex-shrink-0 p-2 rounded-full text-white hover:bg-white/20 transition-colors">
+                    <!-- Ícone Play (Bootstrap Icons) -->
+                    <svg id="play-icon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-6 w-6" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M11.596 8.697l-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                    </svg>
+                    <!-- Ícone Pause (Bootstrap Icons) - Oculto -->
+                    <svg id="pause-icon" xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" class="h-6 w-6 hidden" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M5.5 3.5A1.5 1.5 0 0 1 7 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5zm5 0A1.5 1.5 0 0 1 12 5v6a1.5 1.5 0 0 1-3 0V5a1.5 1.5 0 0 1 1.5-1.5z"/>
+                    </svg>
+                </button>
+                
+                <!-- Slider/Seek bar -->
+                <input type="range" id="frame-slider" value="0" step="0.01" class="w-full mx-2" disabled>
+                
+                <!-- Tempo -->
+                <span id="current-time-display" class="font-mono text-sm text-white bg-black/30 px-3 py-1 rounded-full whitespace-nowrap">
+                    0.00s
+                </span>
+            </div>
+        </div>
+
+        <!-- Controles de Captura Manual (Botão) -->
+        <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 mt-4">
+            <label for="capture-manual-frame-btn" class="block text-sm font-medium text-gray700 mb-2">
+                Use o player acima para encontrar o quadro desejado:
+            </label>
+            <button id="capture-manual-frame-btn" 
+                    class="w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-5 rounded-full shadow-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                Capturar Quadro Atual
+            </button>
+        </div>
+        
+        <!-- Saída da Captura Manual -->
+        <h3 class="text-xl font-semibold text-gray-700 mt-6 mb-3">Quadros Capturados Manualmente:</h3>
+        <div id="manual-output-area" class="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+            <!-- Quadros manuais aqui -->
+        </div>
+    </div>
     
-    <!-- Hidden elements for processing -->
-    <video id="video-processor" style="display: none;" playsinline preload="auto"></video>
+    <!-- Hidden element for processing -->
     <canvas id="canvas-processor" style="display: none;"></canvas>
 </div>
 
@@ -89,9 +194,36 @@
     const outputArea = document.getElementById('output-area');
     const messageElement = document.getElementById('message');
 
+    // Elementos da Seção Manual
+    const manualFrameSection = document.getElementById('manual-frame-section');
+    const frameSlider = document.getElementById('frame-slider');
+    const currentTimeDisplay = document.getElementById('current-time-display');
+    const captureManualFrameBtn = document.getElementById('capture-manual-frame-btn');
+    const manualOutputArea = document.getElementById('manual-output-area');
+
+    // NOVOS Elementos para Controles Customizados
+    const playerContainer = document.getElementById('player-container');
+    const customControlsBar = document.getElementById('custom-controls-bar');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const playIcon = document.getElementById('play-icon');
+    const pauseIcon = document.getElementById('pause-icon');
+
     // Global variables for state
     let videoObjectUrl = null;
     let currentFrameToCapture = 'none'; // State machine: 'first', 'middle', 'last', 'done'
+
+    // --- Event Listeners ---
+    frameSlider.addEventListener('input', seekVideo);
+    video.addEventListener('timeupdate', updateSliderAndTime);
+    captureManualFrameBtn.addEventListener('click', captureManualFrame);
+
+    // NOVOS Listeners para Controles Customizados
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    video.addEventListener('click', togglePlayPause); // Clicar no vídeo
+    video.addEventListener('play', updatePlayPauseIcon);
+    video.addEventListener('pause', updatePlayPauseIcon);
+    // Impede que cliques na barra de controle disparem o play/pause do vídeo
+    customControlsBar.addEventListener('click', (e) => e.stopPropagation());
 
 
     function displayMessage(text, classes = 'text-gray-500') {
@@ -102,8 +234,15 @@
     function handleFileChange(event) {
         // Reset everything
         outputArea.innerHTML = '';
+        manualOutputArea.innerHTML = '';
         displayMessage('');
         currentFrameToCapture = 'none';
+        
+        // Esconde a seção manual e reseta controles
+        manualFrameSection.classList.add('hidden');
+        frameSlider.disabled = true;
+        captureManualFrameBtn.disabled = true;
+        updatePlayPauseIcon(); // Garante que o ícone de play seja mostrado
 
         const file = event.target.files[0];
         if (!file || !file.type.startsWith('video/')) {
@@ -134,6 +273,11 @@
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
+        // Mostra a seção manual e configura o slider
+        manualFrameSection.classList.remove('hidden');
+        frameSlider.max = video.duration;
+        frameSlider.value = 0;
+        
         // Start the sequence: seek to the first frame
         currentFrameToCapture = 'first';
         video.currentTime = 0.01; // Seek to start
@@ -149,7 +293,7 @@
         const imageUrl = canvas.toDataURL('image/png');
 
         if (currentFrameToCapture === 'first') {
-            renderFrame(imageUrl, 'Quadro Inicial', `primeiro_quadro_${Date.now()}.png`);
+            renderFrame(imageUrl, 'Quadro Inicial', `primeiro_quadro_${Date.now()}.png`, outputArea);
             
             // Next, seek to middle
             currentFrameToCapture = 'middle';
@@ -157,7 +301,7 @@
             displayMessage('🔍 Buscando o quadro do meio...', 'text-yellow-600 font-semibold');
 
         } else if (currentFrameToCapture === 'middle') {
-            renderFrame(imageUrl, 'Quadro do Meio', `quadro_meio_${Date.now()}.png`);
+            renderFrame(imageUrl, 'Quadro do Meio', `quadro_meio_${Date.now()}.png`, outputArea);
 
             // Next, seek to end
             currentFrameToCapture = 'last';
@@ -165,18 +309,28 @@
             displayMessage('🔍 Buscando o último quadro...', 'text-yellow-600 font-semibold');
 
         } else if (currentFrameToCapture === 'last') {
-            renderFrame(imageUrl, 'Último Quadro', `ultimo_quadro_${Date.now()}.png`);
+            renderFrame(imageUrl, 'Último Quadro', `ultimo_quadro_${Date.now()}.png`, outputArea);
 
             // Sequence is done
             currentFrameToCapture = 'done';
-            displayMessage(`✅ Quadros extraídos com sucesso!`, 'text-green-600 font-semibold');
+            
+            // Habilita controles manuais e muda mensagem
+            displayMessage(`✅ Quadros extraídos! Agora você pode usar o player para capturar quadros manualmente.`, 'text-green-600 font-semibold');
+            frameSlider.disabled = false;
+            captureManualFrameBtn.disabled = false;
 
             cleanupListeners(); // We are done
+            updatePlayPauseIcon(); // Garante que o ícone de play e a barra estejam visíveis
         }
     }
 
     // Helper function to create and append a frame card
-    function renderFrame(imageUrl, title, downloadFilename) {
+    function renderFrame(imageUrl, title, downloadFilename, targetContainer) {
+        if (!targetContainer) {
+            console.error("targetContainer não foi fornecido para renderFrame");
+            return;
+        }
+
         const frameContainer = document.createElement('div');
         frameContainer.className = "flex flex-col items-center text-center p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-lg";
 
@@ -199,7 +353,8 @@
         frameContainer.appendChild(imgEl);
         frameContainer.appendChild(downloadLink);
         
-        outputArea.appendChild(frameContainer);
+        // Adiciona ao container de destino (prepend para o novo aparecer primeiro)
+        targetContainer.prepend(frameContainer);
     }
     
     function handleVideoError() {
@@ -208,17 +363,70 @@
     }
 
     function cleanupListeners() {
+        // Limpa apenas os listeners da sequência automática
         video.onloadedmetadata = null;
-        video.onseeked = null;
+        video.onseeked = null; // Chave! Impede que 'processSequencedFrame' rode em seeks manuais
         video.onerror = null;
-        if (videoObjectUrl) {
-            URL.revokeObjectURL(videoObjectUrl);
-            videoObjectUrl = null;
+    }
+    
+    // --- Funções de Controle do Player ---
+
+    // Atualiza o slider e o texto de tempo
+    function updateSliderAndTime() {
+        if (video.duration) {
+            const time = video.currentTime;
+            frameSlider.value = time;
+            currentTimeDisplay.textContent = `${time.toFixed(2)}s`;
         }
+    }
+
+    // Procura no vídeo quando o slider é movido
+    function seekVideo() {
+        video.currentTime = frameSlider.value;
+    }
+
+    // Captura o quadro atual do player de vídeo
+    function captureManualFrame() {
+        if (!video.duration) return;
+
+        // Garante que o canvas tem o tamanho certo
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageUrl = canvas.toDataURL('image/png');
+        const time = video.currentTime.toFixed(2);
+        
+        // Renderiza na área de saída manual
+        renderFrame(
+            imageUrl, 
+            `Quadro: ${time}s`, 
+            `quadro_em_${time}s.png`,
+            manualOutputArea
+        );
+    }
+
+    // NOVAS FUNÇÕES PARA CONTROLES CUSTOMIZADOS
+    function togglePlayPause(event) {
+        // Impede que o clique se propague (ex: do botão para o vídeo)
+        if (event) event.stopPropagation(); 
+        
+        if (video.paused) {
+            video.play();
+        } else {
+            video.pause();
+        }
+    }
+
+    function updatePlayPauseIcon() {
+        const isPaused = video.paused;
+        playIcon.classList.toggle('hidden', !isPaused);
+        pauseIcon.classList.toggle('hidden', isPaused);
+        // Usa o atributo data- para que o CSS possa mostrar a barra quando pausado
+        customControlsBar.dataset.paused = isPaused; 
     }
 
 </script>
 </body>
 </html>
-
-
