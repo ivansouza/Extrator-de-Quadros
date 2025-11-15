@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Extrator de Quadros</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <!-- Theme Color for PWA -->
+    <meta name="theme-color" content="#4f46e5">
+
+    <style>
+        /* Custom styles for aesthetic background and font */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7f9;
+        }
+    </style>
+</head>
+<body class="p-2 sm:p-4">
+
+<div id="app" class="w-full max-w-6xl mx-auto bg-white p-4 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl shadow-2xl transition-all duration-300">
+    <!-- Header -->
+    <h1 class="text-3xl sm:text-4xl font-extrabold text-indigo-700 mb-2">
+        🎬 Extrator de Quadros de Vídeo
+    </h1>
+    <p class="text-gray-500 mb-6 text-sm sm:text-base">
+        Carregue um vídeo para capturar os quadros inicial, do meio e final.
+        Este app funciona 100% offline.
+    </p>
+
+    <!-- File Input and Controls -->
+    <div class="mb-6 p-4 border-2 border-dashed border-indigo-300 rounded-xl bg-indigo-50">
+        <label for="videoFile" class="block text-base sm:text-lg font-medium text-indigo-700 mb-3">
+            Selecione o Arquivo de Vídeo
+        </label>
+        <input 
+            type="file" 
+            id="videoFile"
+            accept="video/*" 
+            onchange="handleFileChange(event)"
+            class="block w-full text-sm text-gray-900 
+                   file:mr-4 file:py-2 file:px-4 
+                   file:rounded-full file:border-0
+                   file:text-sm file:font-semibold
+                   file:bg-indigo-500 file:text-white
+                   hover:file:bg-indigo-600 cursor-pointer"
+        >
+    </div>
+
+    <!-- Message Area -->
+    <div id="message-container" class="mb-6">
+        <p id="message" class="text-sm italic text-gray-500"></p>
+    </div>
+
+    <!-- Output Area (Extracted Images) -->
+    <div id="output-area" class="min-h-[100px] w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <!-- Os quadros extraídos serão exibidos aqui -->
+    </div>
+    
+    <!-- Hidden elements for processing -->
+    <video id="video-processor" style="display: none;" playsinline preload="auto"></video>
+    <canvas id="canvas-processor" style="display: none;"></canvas>
+</div>
+
+<script>
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registrado com sucesso:', registration.scope);
+                })
+                .catch(error => {
+                    console.log('Falha ao registrar ServiceWorker:', error);
+                });
+        });
+    }
+
+    // DOM Elements
+    const video = document.getElementById('video-processor');
+    const canvas = document.getElementById('canvas-processor');
+    const outputArea = document.getElementById('output-area');
+    const messageElement = document.getElementById('message');
+
+    // Global variables for state
+    let videoObjectUrl = null;
+    let currentFrameToCapture = 'none'; // State machine: 'first', 'middle', 'last', 'done'
+
+
+    function displayMessage(text, classes = 'text-gray-500') {
+        messageElement.textContent = text;
+        messageElement.className = `text-sm italic ${classes}`;
+    }
+
+    function handleFileChange(event) {
+        // Reset everything
+        outputArea.innerHTML = '';
+        displayMessage('');
+        currentFrameToCapture = 'none';
+
+        const file = event.target.files[0];
+        if (!file || !file.type.startsWith('video/')) {
+            displayMessage('⚠️ Por favor, selecione um arquivo de vídeo válido.', 'text-red-500 font-semibold');
+            return;
+        }
+
+        if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
+
+        videoObjectUrl = URL.createObjectURL(file);
+        video.src = videoObjectUrl;
+        
+        displayMessage('⏳ Vídeo carregado. Aguardando metadados...', 'text-yellow-600 font-semibold');
+
+        // Setup new event listeners
+        video.onloadedmetadata = processVideoMetadata;
+        video.onseeked = processSequencedFrame; // Main state machine
+        video.onerror = handleVideoError;
+    }
+
+    function processVideoMetadata() {
+        if (!video.duration || video.duration === 0) {
+            displayMessage('⚠️ Não foi possível ler a duração do vídeo. O arquivo pode estar corrompido.', 'text-red-500 font-semibold');
+            cleanupListeners();
+            return;
+        }
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Start the sequence: seek to the first frame
+        currentFrameToCapture = 'first';
+        video.currentTime = 0.01; // Seek to start
+        displayMessage('🔍 Buscando o quadro inicial...', 'text-yellow-600 font-semibold');
+    }
+
+    // This function acts as a state machine, triggered after each seek
+    function processSequencedFrame() {
+        if (currentFrameToCapture === 'done') return;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const imageUrl = canvas.toDataURL('image/png');
+
+        if (currentFrameToCapture === 'first') {
+            renderFrame(imageUrl, 'Quadro Inicial', `primeiro_quadro_${Date.now()}.png`);
+            
+            // Next, seek to middle
+            currentFrameToCapture = 'middle';
+            video.currentTime = video.duration / 2;
+            displayMessage('🔍 Buscando o quadro do meio...', 'text-yellow-600 font-semibold');
+
+        } else if (currentFrameToCapture === 'middle') {
+            renderFrame(imageUrl, 'Quadro do Meio', `quadro_meio_${Date.now()}.png`);
+
+            // Next, seek to end
+            currentFrameToCapture = 'last';
+            video.currentTime = video.duration - 0.01; // Seek to end
+            displayMessage('🔍 Buscando o último quadro...', 'text-yellow-600 font-semibold');
+
+        } else if (currentFrameToCapture === 'last') {
+            renderFrame(imageUrl, 'Último Quadro', `ultimo_quadro_${Date.now()}.png`);
+
+            // Sequence is done
+            currentFrameToCapture = 'done';
+            displayMessage(`✅ Quadros extraídos com sucesso!`, 'text-green-600 font-semibold');
+
+            cleanupListeners(); // We are done
+        }
+    }
+
+    // Helper function to create and append a frame card
+    function renderFrame(imageUrl, title, downloadFilename) {
+        const frameContainer = document.createElement('div');
+        frameContainer.className = "flex flex-col items-center text-center p-3 sm:p-4 bg-gray-50 rounded-xl border border-gray-200 shadow-lg";
+
+        const titleEl = document.createElement('h2');
+        titleEl.className = "text-lg font-bold mb-3 text-gray-700";
+        titleEl.textContent = title;
+
+        const imgEl = document.createElement('img');
+        imgEl.src = imageUrl;
+        imgEl.className = "w-full h-auto rounded-lg shadow-md border-2 border-indigo-300/50";
+        imgEl.alt = title;
+
+        const downloadLink = document.createElement('a');
+        downloadLink.href = imageUrl;
+        downloadLink.download = downloadFilename;
+        downloadLink.textContent = 'Baixar Imagem';
+        downloadLink.className = 'mt-4 inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-lg transition duration-300 text-sm';
+
+        frameContainer.appendChild(titleEl);
+        frameContainer.appendChild(imgEl);
+        frameContainer.appendChild(downloadLink);
+        
+        outputArea.appendChild(frameContainer);
+    }
+    
+    function handleVideoError() {
+        displayMessage('❌ Ocorreu um erro ao carregar o arquivo de vídeo.', 'text-red-500 font-semibold');
+        cleanupListeners();
+    }
+
+    function cleanupListeners() {
+        video.onloadedmetadata = null;
+        video.onseeked = null;
+        video.onerror = null;
+        if (videoObjectUrl) {
+            URL.revokeObjectURL(videoObjectUrl);
+            videoObjectUrl = null;
+        }
+    }
+
+</script>
+</body>
+</html>
